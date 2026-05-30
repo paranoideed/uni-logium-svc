@@ -11,5 +11,5 @@ services:
 
 networks:
   default:
-    name: uni-products-svc_uni-net
+    name: uni-net
     external: true

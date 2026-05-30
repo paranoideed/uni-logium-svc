@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"math/rand/v2"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awscfg "github.com/aws/aws-sdk-go-v2/config"
@@ -72,7 +74,9 @@ func (c *Consumer) Run(ctx context.Context) {
 		}
 
 		for _, msg := range output.Messages {
-			c.processMessage(ctx, msg)
+			msgCtx, cancel := context.WithTimeout(ctx, 29*time.Second)
+			c.processMessage(msgCtx, msg)
+			cancel()
 		}
 	}
 }
@@ -85,11 +89,19 @@ func (c *Consumer) processMessage(ctx context.Context, msg types.Message) {
 		return
 	}
 
-	c.logEvent(event)
+	if err := c.logEvent(event); err != nil {
+		c.log.Warn("transient error: message will be retried by SQS", "error", err)
+		return
+	}
+
 	c.deleteMessage(ctx, msg.ReceiptHandle)
 }
 
-func (c *Consumer) logEvent(event CDCEvent) {
+func (c *Consumer) logEvent(event CDCEvent) error {
+	if rand.IntN(10) == 0 {
+		return fmt.Errorf("simulated transient error")
+	}
+
 	switch event.Op {
 	case "c":
 		c.log.Info("product created",
@@ -99,17 +111,19 @@ func (c *Consumer) logEvent(event CDCEvent) {
 		)
 
 	case "u":
-		c.log.Info("product deleted",
+		c.log.Info("product updated",
 			"product_id", event.After.ID,
 			"name", event.After.Name,
 		)
 
 	case "r", "d":
-		//skip
+		// skip
 
 	default:
 		c.log.Warn("unknown cdc operation", "op", event.Op)
 	}
+
+	return nil
 }
 
 func (c *Consumer) deleteMessage(ctx context.Context, receiptHandle *string) {
