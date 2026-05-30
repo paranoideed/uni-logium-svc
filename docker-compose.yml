@@ -8,6 +8,8 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       - AWS_REGION=${AWS_REGION}
       - SQS_QUEUE_URL=${SQS_QUEUE_URL}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://uni-otel-collector:4318
+      - OTEL_SERVICE_NAME=uni-logium-svc
 
 networks:
   default:

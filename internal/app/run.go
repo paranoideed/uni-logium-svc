@@ -4,13 +4,31 @@ import (
 	"context"
 	"sync"
 
+	"github.com/paranoideed/uni-logium-svc/internal/metrics"
 	"github.com/paranoideed/uni-logium-svc/internal/notify"
+	"github.com/paranoideed/uni-logium-svc/internal/telemetry"
 )
 
 func (a *App) Run(ctx context.Context) error {
+	shutdown, err := telemetry.Setup(ctx, "uni-logium-svc")
+	if err != nil {
+		return err
+	}
+
 	log := a.Logger()
 
-	consumer, err := notify.NewConsumer(ctx, a.config.SQS.QueueURL, log)
+	defer func() {
+		if err := shutdown(context.Background()); err != nil {
+			log.Error("failed to shutdown telemetry gracefully", "error", err)
+		}
+	}()
+
+	m, err := metrics.New()
+	if err != nil {
+		return err
+	}
+
+	consumer, err := notify.NewConsumer(ctx, a.config.SQS.QueueURL, log, m)
 	if err != nil {
 		return err
 	}

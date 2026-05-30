@@ -34,17 +34,10 @@ func (a *App) buildLogger() *slog.Logger {
 		lvl = slog.LevelError
 	}
 
-	var handler slog.Handler
 	switch strings.ToLower(strings.TrimSpace(a.config.Log.Format)) {
 	case "json":
-		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-			Level: lvl,
-		})
+		return slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: lvl}))
 	default:
-		handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-			Level: lvl,
-		})
+		return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: lvl}))
 	}
-
-	return slog.New(handler)
 }
