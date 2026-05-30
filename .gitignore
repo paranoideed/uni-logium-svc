@@ -1,0 +1,6 @@
+.claude
+.idea
+.env
+vendor
+
+cmd/uni-logium-svc/main

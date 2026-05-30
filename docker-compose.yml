@@ -1,0 +1,15 @@
+services:
+  uni-logium-svc:
+    build: .
+    container_name: uni-logium-svc
+    env_file: .env
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - SQS_QUEUE_URL=${SQS_QUEUE_URL}
+
+networks:
+  default:
+    name: uni-products-svc_uni-net
+    external: true

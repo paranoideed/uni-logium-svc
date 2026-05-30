@@ -1,0 +1,7 @@
+log:
+  level: "info"
+  format: "json"
+
+sqs:
+  queue_url: "${SQS_QUEUE_URL}"
+  workers: 1
