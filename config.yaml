@@ -3,7 +3,7 @@ log:
   format: "json"
 
 rest:
-  port: 8080
+  port: "${INTERNAL_HTTP_PORT}"
   read_timeout: 5s
   write_timeout: 5s
   idle_timeout: 30s
