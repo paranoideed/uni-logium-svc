@@ -6,6 +6,7 @@ import (
 
 	"github.com/paranoideed/uni-logium-svc/internal/metrics"
 	"github.com/paranoideed/uni-logium-svc/internal/notify"
+	"github.com/paranoideed/uni-logium-svc/internal/rest"
 	"github.com/paranoideed/uni-logium-svc/internal/telemetry"
 )
 
@@ -28,26 +29,25 @@ func (a *App) Run(ctx context.Context) error {
 		return err
 	}
 
-	consumer, err := notify.NewConsumer(ctx, a.config.SQS.QueueURL, log, m)
+	consumer, err := notify.NewConsumer(ctx, log, m, a.config.SQS.QueueURL, a.config.SQS.Workers, a.config.SQS.Fetchers, a.config.SQS.VisibilityTimeout)
 	if err != nil {
 		return err
 	}
 
-	workers := a.config.SQS.Workers
-	if workers <= 0 {
-		workers = 1
-	}
+	log.Info("application started", "sqs_workers", a.config.SQS.Workers, "sqs_fetchers", a.config.SQS.Fetchers)
+
+	server := rest.NewServer(func(ctx context.Context) error { return nil })
 
 	var wg sync.WaitGroup
-	for range workers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			consumer.Run(ctx)
-		}()
-	}
-
-	log.Info("application started", "sqs_workers", workers)
+	wg.Go(func() { consumer.Run(ctx) })
+	wg.Go(func() {
+		server.Run(ctx, log, rest.Config{
+			Port:         a.config.Rest.Port,
+			ReadTimeout:  a.config.Rest.ReadTimeout,
+			WriteTimeout: a.config.Rest.WriteTimeout,
+			IdleTimeout:  a.config.Rest.IdleTimeout,
+		})
+	})
 	wg.Wait()
 
 	return nil

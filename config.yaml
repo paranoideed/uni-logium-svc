@@ -2,6 +2,14 @@ log:
   level: "info"
   format: "json"
 
+rest:
+  port: 8080
+  read_timeout: 5s
+  write_timeout: 5s
+  idle_timeout: 30s
+
 sqs:
   queue_url: "${SQS_QUEUE_URL}"
-  workers: 1
+  workers: 10
+  fetchers: 10
+  visibility_timeout: 29s
