@@ -193,7 +193,14 @@ func (c *Consumer) handleMessage(ctx context.Context, msg types.Message) {
 	start := time.Now()
 
 	var err error
-	defer func() { c.metrics.RecordProcessed(ctx, start, err) }()
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic: %v", r)
+			c.log.Error("panic recovered in message handler", "panic", r, "msg_id", aws.ToString(msg.MessageId))
+		}
+
+		c.metrics.RecordProcessed(ctx, start, err)
+	}()
 
 	var event CDCEvent
 	if err = json.Unmarshal([]byte(aws.ToString(msg.Body)), &event); err != nil {
